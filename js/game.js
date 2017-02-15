@@ -6,16 +6,44 @@ window.onload = function () {
     var tilesArray = [];
     var selectedArray = [];
     var playSound;
+    var score;
+    var timeLeft;
+    var tilesLeft;
     var game = new Phaser.Game(500, 500);
     var playGame = function (game) { }
     playGame.prototype = {
+        scoreText: null,
+        timeText: null,
+        soundArray: [],
         preload: function () {
             game.load.spritesheet("tiles", "img/tiles.png", tileSize, tileSize);
+            game.load.audio("select", ["sound/select.mp3", "select.ogg"]);
+            game.load.audio("right", ["sound/right.mp3", "right.ogg"]);
+            game.load.audio("wrong", ["sound/wrong.mp3", "wrong.ogg"]);
         },
         create: function () {
+            score = 0;
+            timeLeft = 60;
             this.placeTiles();
+            if (playSound) {
+                this.soundArray[0] = game.add.audio("select", 1);
+                this.soundArray[1] = game.add.audio("right", 1);
+                this.soundArray[2] = game.add.audio("wrong", 1);
+            }
+            var style = {
+                font: "32px Monospace",
+                fill: "#00ff00",
+                align: "center"
+            }
+            this.scoreText = game.add.text(5, 5, "Score: " + score, style);
+            this.timeText = game.add.text(5, game.height - 5, "Time left: " + timeLeft,
+                style);
+            this.timeText.anchor.set(0, 1);
+            game.time.events.loop(Phaser.Timer.SECOND, this.decreaseTime, this);
+
         },
         placeTiles: function () {
+            tilesLeft = numRows * numCols;
             var leftSpace = (game.width - (numCols * tileSize) - ((numCols - 1) *
                 tileSpacing)) / 2;
             var topSpace = (game.height - (numRows * tileSize) - ((numRows - 1) *
@@ -42,6 +70,9 @@ window.onload = function () {
         },
         showTile: function (target) {
             if (selectedArray.length < 2 && selectedArray.indexOf(target) == -1) {
+                if (playSound) {
+                    this.soundArray[0].play();
+                }
                 target.frame = target.value;
                 selectedArray.push(target);
                 if (selectedArray.length == 2) {
@@ -51,15 +82,38 @@ window.onload = function () {
         },
         checkTiles: function () {
             if (selectedArray[0].value == selectedArray[1].value) {
+                if (playSound) {
+                    this.soundArray[1].play();
+                }
+                score++;
+                timeLeft += 2;
+                this.timeText.text = "Time left: " + timeLeft;
+                this.scoreText.text = "Score: " + score;
                 selectedArray[0].destroy();
                 selectedArray[1].destroy();
+                tilesLeft -= 2;
+                if (tilesLeft == 0) {
+                    tilesArray.length = 0;
+                    selectedArray.length = 0;
+                    this.placeTiles();
+                }
             }
             else {
+                if (playSound) {
+                    this.soundArray[2].play();
+                }
                 selectedArray[0].frame = 10;
                 selectedArray[1].frame = 10;
             }
             selectedArray.length = 0;
 
+        },
+        decreaseTime: function () {
+            timeLeft--;
+            this.timeText.text = "Time left: " + timeLeft;
+            if (timeLeft == 0) {
+                game.state.start("GameOver");
+            }
         }
     }
     var titleScreen = function (game) { }
@@ -68,6 +122,10 @@ window.onload = function () {
             game.load.spritesheet("soundicons", "img/soundicons.png", 80, 80);
         },
         create: function () {
+            game.scale.pageAlignHorizontally = true;
+            game.scale.pageAlignVertically = true;
+            game.scale.scaleMode = Phaser.ScaleManager.SHOW_ALL;
+            game.stage.disableVisibilityChange = true;
             var style = {
                 font: "48px Monospace",
                 fill: "#00ff00",
@@ -94,7 +152,26 @@ window.onload = function () {
             game.state.start("PlayGame");
         }
     }
+    var gameOver = function (game) { }
+    gameOver.prototype = {
+        create: function () {
+            var style = {
+                font: "32px Monospace",
+                fill: "#00ff00",
+                align: "center"
+            }
+            var text = game.add.text(game.width / 2, game.height / 2, "GameOver\n\nYour score: " + score + "\n\nTap to restart", style);
+            text.anchor.set(0.5);
+            game.input.onDown.add(this.restartGame, this);
+        },
+        restartGame: function () {
+            tilesArray.length = 0;
+            selectedArray.length = 0;
+            game.state.start("TitleScreen");
+        }
+    }
     game.state.add("TitleScreen", titleScreen);
     game.state.add("PlayGame", playGame);
+    game.state.add("GameOver", gameOver);
     game.state.start("TitleScreen");
 }
