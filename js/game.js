@@ -33,7 +33,7 @@ window.onload = function () {
         }
     }
 
-
+    //Play a game
     var playGame = function (game) { }
     playGame.prototype = {
         scoreText: null,
@@ -140,6 +140,8 @@ window.onload = function () {
             }
         }
     }
+
+    //Initial screen
     var titleScreen = function (game) { }
     titleScreen.prototype = {
         preload: function () {
@@ -176,6 +178,8 @@ window.onload = function () {
             game.state.start("PlayGame");
         }
     }
+
+    //Screen game over
     var gameOver = function (game) { }
     gameOver.prototype = {
         create: function () {
