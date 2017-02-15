@@ -47,7 +47,7 @@ window.onload = function () {
         },
         create: function () {
             score = 0;
-            timeLeft = 10;
+            timeLeft = 60;
             this.placeTiles();
             if (playSound) {
                 this.soundArray[0] = game.add.audio("select", 1);
