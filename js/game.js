@@ -3,6 +3,8 @@ window.onload = function () {
     var numRows = 4;
     var numCols = 5;
     var tileSpacing = 10;
+    var localStorageName = "crackalien";
+    var highScore;
     var tilesArray = [];
     var selectedArray = [];
     var playSound;
@@ -10,6 +12,28 @@ window.onload = function () {
     var timeLeft;
     var tilesLeft;
     var game = new Phaser.Game(500, 500);
+
+    //Preload preloadAssets
+    var preloadAssets = function (game) { }
+    preloadAssets.prototype = {
+        preload: function () {
+            game.load.spritesheet("tiles", "img/tiles.png", tileSize,
+                tileSize);
+            game.load.audio("select", ["sound/select.mp3",
+                "assets/sounds/select.ogg"]);
+            game.load.audio("right", ["sound/right.mp3",
+                "assets/sounds/right.ogg"]);
+            game.load.audio("wrong", ["sound/wrong.mp3",
+                "assets/sounds/wrong.ogg"]);
+            game.load.spritesheet("soundicons", "img/soundicons.png", 80,
+                80);
+        },
+        create: function () {
+            game.state.start("TitleScreen");
+        }
+    }
+
+
     var playGame = function (game) { }
     playGame.prototype = {
         scoreText: null,
@@ -23,7 +47,7 @@ window.onload = function () {
         },
         create: function () {
             score = 0;
-            timeLeft = 60;
+            timeLeft = 10;
             this.placeTiles();
             if (playSound) {
                 this.soundArray[0] = game.add.audio("select", 1);
@@ -35,8 +59,8 @@ window.onload = function () {
                 fill: "#00ff00",
                 align: "center"
             }
-            this.scoreText = game.add.text(5, 5, "Score: " + score, style);
-            this.timeText = game.add.text(5, game.height - 5, "Time left: " + timeLeft,
+            this.scoreText = game.add.text(5, 5, "Puntuacio: " + score, style);
+            this.timeText = game.add.text(5, game.height - 5, "Temps restant: " + timeLeft,
                 style);
             this.timeText.anchor.set(0, 1);
             game.time.events.loop(Phaser.Timer.SECOND, this.decreaseTime, this);
@@ -87,8 +111,8 @@ window.onload = function () {
                 }
                 score++;
                 timeLeft += 2;
-                this.timeText.text = "Time left: " + timeLeft;
-                this.scoreText.text = "Score: " + score;
+                this.timeText.text = "Temps restant: " + timeLeft;
+                this.scoreText.text = "Puntuacio " + score;
                 selectedArray[0].destroy();
                 selectedArray[1].destroy();
                 tilesLeft -= 2;
@@ -110,7 +134,7 @@ window.onload = function () {
         },
         decreaseTime: function () {
             timeLeft--;
-            this.timeText.text = "Time left: " + timeLeft;
+            this.timeText.text = "Temps restant: " + timeLeft;
             if (timeLeft == 0) {
                 game.state.start("GameOver");
             }
@@ -132,7 +156,7 @@ window.onload = function () {
                 align: "center"
             };
             var text = game.add.text(game.width / 2, game.height / 2 - 100,
-                "Crack Alien Code", style);
+                "Cracken Alien Code", style);
             text.anchor.set(0.5);
             var soundButton = game.add.button(game.width / 2 - 100,
                 game.height / 2 + 100, "soundicons", this.startGame, this);
@@ -155,12 +179,15 @@ window.onload = function () {
     var gameOver = function (game) { }
     gameOver.prototype = {
         create: function () {
+            highScore = Math.max(score, highScore);
+            localStorage.setItem(localStorageName, highScore);
             var style = {
                 font: "32px Monospace",
                 fill: "#00ff00",
                 align: "center"
             }
-            var text = game.add.text(game.width / 2, game.height / 2, "GameOver\n\nYour score: " + score + "\n\nTap to restart", style);
+            var text = game.add.text(game.width / 2, game.height / 2, "Fi del joc!\n\nPuntuacio final: " + score + "\nMillor puntuacio: " + highScore + "\n\nClic per reiniciar",
+                style);
             text.anchor.set(0.5);
             game.input.onDown.add(this.restartGame, this);
         },
@@ -170,8 +197,17 @@ window.onload = function () {
             game.state.start("TitleScreen");
         }
     }
+    game.state.add("PreloadAssets", preloadAssets);
     game.state.add("TitleScreen", titleScreen);
     game.state.add("PlayGame", playGame);
     game.state.add("GameOver", gameOver);
+    highScore = localStorage.getItem(localStorageName) == null ? 0 :
+        localStorage.getItem(localStorageName);
     game.state.start("TitleScreen");
+    if (localStorage.getItem(localStorageName) == null) {
+        highScore = 0;
+    }
+    else {
+        highScore = localStorage.getItem(localStorageName);
+    }
 }
